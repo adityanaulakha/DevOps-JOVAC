@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    environment {
+        REPO_URL = 'https://github.com/adityanaulakha/DevOps-JOVAC.git'
+        DOCKER_IMAGE = 'yourdockerhub/flask-app' // replace with your actual image name
+        DEPLOY_SERVER = 'ubuntu@13.233.91.144' // replace with actual IP or DNS
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: "${REPO_URL}"
+            }
+        }
+
+        stage('Navigate to Project Folder') {
+            steps {
+                dir('Jenkins: Mini Project') {
+                    script {
+                        echo 'Moved into the project subfolder'
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('Jenkins: Mini Project') {
+                    script {
+                        sh 'docker build -t ${DOCKER_IMAGE}:latest .'
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push ${DOCKER_IMAGE}:latest
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            steps {
+                script {
+                    sshagent(['deploy-key']) {
+                        sh '''
+                            ssh ${DEPLOY_SERVER} "docker pull ${DOCKER_IMAGE}:latest && docker rm -f flask-app || true && docker run -d --name flask-app -p 5000:5000 ${DOCKER_IMAGE}:latest"
+                        '''
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed.'
+        }
+    }
+}
