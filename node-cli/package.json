@@ -1,0 +1,12 @@
+{
+  "name": "node-cli",
+  "version": "1.0.0",
+  "description": "A simple Node.js CLI test project",
+  "main": "math.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
